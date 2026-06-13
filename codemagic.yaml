@@ -1,0 +1,38 @@
+# Cấu hình quy trình biên dịch Water Habit App trên Codemagic 🌿
+workflows:
+  ios-workflow:
+    name: Build iOS (Runner)
+    max_build_duration: 120
+    instance_type: mac_mini_m1
+    environment:
+      groups:
+        - certificates # Tên nhóm chứa Certificates & Provisioning Profiles nếu bạn cài đặt tự động ký
+      flutter: stable
+      xcode: latest
+    triggering:
+      events:
+        - push
+      branches:
+        - main
+    scripts:
+      - name: Set up local properties
+        script: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
+      - name: Install Flutter Dependencies
+        script: |
+          flutter pub get
+      - name: Initialize iOS Pods
+        script: |
+          cd ios
+          pod install
+      - name: Build Flutter iOS (no codesign)
+        script: |
+          # Build ra thư mục Build để sinh Xcode Schemes đầy đủ
+          flutter build ios --release --no-codesign
+      - name: Build IPA (Optional - uncomment if certificates are configured)
+        script: |
+          # Dòng dưới đây dùng để đóng gói file .ipa cài đặt nếu bạn đã cấu hình Signing ở Xcode/Codemagic
+          # xcode-project build-ipa --workspace ios/Runner.xcworkspace --scheme Runner
+    artifacts:
+      - build/ios/iphoneos/*.app
+      - ios/*.ipa
